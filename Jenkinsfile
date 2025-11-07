@@ -19,19 +19,19 @@ pipeline {
     stage('Run Remote Deploy') {
       steps {
         sshagent (credentials: [env.SSH_CRED_ID]) {
-          sh '''
+          sh """
             echo "[INFO] Starting remote deploy..."
-            ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST "
+            ssh -T -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
               set -e
-              echo '[INFO] Connecting to remote server...'
-              echo '[INFO] Downloading latest deploy script...'
-              curl -s -o /tmp/deploy_remote.sh https://raw.githubusercontent.com/chlwjddn20042/django_test/$BRANCH/mysite/scripts/deploy_remote.sh
+              echo "[INFO] Connecting to remote server..."
+              echo "[INFO] Downloading latest deploy script..."
+              curl -s -o /tmp/deploy_remote.sh https://raw.githubusercontent.com/chlwjddn20042/django_test/${BRANCH}/mysite/scripts/deploy_remote.sh
               chmod +x /tmp/deploy_remote.sh
-              echo '[INFO] Running remote deployment script...'
+              echo "[INFO] Running remote deployment script..."
               /tmp/deploy_remote.sh || exit 1
-              echo '[INFO] ✅ Remote deployment finished successfully.'
-            "
-          '''
+              echo "[INFO] ✅ Remote deployment finished successfully."
+            '
+          """
         }
       }
     }
