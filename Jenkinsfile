@@ -5,7 +5,6 @@ pipeline {
     DEPLOY_USER = 'vagrant'
     DEPLOY_HOST = '192.168.56.23'
     DEPLOY_DIR  = '/home/vagrant/django_git/mysite'
-    REPO_URL    = 'https://github.com/chlwjddn20042/django_test.git'
     BRANCH      = 'main'
     SSH_CRED_ID = 'deploy-ssh-key'
   }
@@ -21,7 +20,9 @@ pipeline {
       steps {
         sshagent (credentials: [env.SSH_CRED_ID]) {
           sh """
+            echo "[INFO] Starting remote deploy..."
             cat <<'SCRIPT' | ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} bash
+              set -e
               echo "[INFO] Connecting to remote server..."
               echo "[INFO] Downloading latest deploy script..."
               curl -s -o /tmp/deploy_remote.sh https://raw.githubusercontent.com/chlwjddn20042/django_test/${BRANCH}/mysite/scripts/deploy_remote.sh
