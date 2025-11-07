@@ -7,11 +7,10 @@ pipeline {
     DEPLOY_DIR  = '/home/vagrant/django_git/mysite'
     REPO_URL    = 'https://github.com/chlwjddn20042/django_test.git'
     BRANCH      = 'main'
-    SSH_CRED_ID = 'deploy-ssh-key'   // Jenkins Credentials ID
+    SSH_CRED_ID = 'deploy-ssh-key'
   }
 
   stages {
-
     stage('Checkout') {
       steps {
         checkout scm
@@ -21,7 +20,7 @@ pipeline {
     stage('Run Remote Deploy') {
       steps {
         sshagent (credentials: [env.SSH_CRED_ID]) {
-          sh """
+          sh '''
             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} <<'EOF'
               echo "[INFO] Connecting to remote server..."
               echo "[INFO] Downloading latest deploy script..."
@@ -30,8 +29,8 @@ pipeline {
               echo "[INFO] Running remote deployment script..."
               /tmp/deploy_remote.sh || exit 1
               echo "[INFO] ✅ Remote deployment finished successfully."
-            EOF
-          """
+EOF
+          '''
         }
       }
     }
@@ -46,3 +45,4 @@ pipeline {
     }
   }
 }
+
