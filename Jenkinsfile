@@ -6,7 +6,7 @@ pipeline {
     DEPLOY_HOST = '192.168.56.23'
     DEPLOY_DIR  = '/home/vagrant/django_git/mysite'
     BRANCH      = 'main'
-    SSH_CRED_ID = 'deploy-ssh-key'
+    SSH_CRED_ID = 'deploy-ssh-key'   // Jenkins Credentials ID (username=vagrant, private key)
   }
 
   stages {
@@ -18,19 +18,20 @@ pipeline {
 
     stage('Run Remote Deploy') {
       steps {
-        sshagent (credentials: [env.SSH_CRED_ID]) {
+        // SSH 자격증명에서 private key를 파일로 꺼내서 scp/ssh에 전달
+        withCredentials([sshUserPrivateKey(credentialsId: env.SSH_CRED_ID,
+                                           keyFileVariable: 'SSH_KEY')]) {
           sh """
-            echo "[INFO] Starting remote deploy..."
-            ssh -T -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
-              set -e
-              echo "[INFO] Connecting to remote server..."
-              echo "[INFO] Downloading latest deploy script..."
-              curl -s -o /tmp/deploy_remote.sh https://raw.githubusercontent.com/chlwjddn20042/django_test/${BRANCH}/mysite/scripts/deploy_remote.sh
-              chmod +x /tmp/deploy_remote.sh
-              echo "[INFO] Running remote deployment script..."
-              /tmp/deploy_remote.sh || exit 1
-              echo "[INFO] ✅ Remote deployment finished successfully."
-            '
+            set -euo pipefail
+            echo "[INFO] Copy deploy script to remote..."
+            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no \\
+                mysite/scripts/deploy_remote.sh \\
+                ${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/deploy_remote.sh
+
+            echo "[INFO] Run deploy script on remote..."
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no \\
+                ${DEPLOY_USER}@${DEPLOY_HOST} \\
+                'chmod +x /tmp/deploy_remote.sh && /tmp/deploy_remote.sh'
           """
         }
       }
@@ -38,11 +39,8 @@ pipeline {
   }
 
   post {
-    success {
-      echo "✅ Deployment succeeded"
-    }
-    failure {
-      echo "❌ Deployment failed"
-    }
+    success { echo "✅ Deployment succeeded" }
+    failure { echo "❌ Deployment failed" }
   }
 }
+
